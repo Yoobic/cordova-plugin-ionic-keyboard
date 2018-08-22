@@ -44,6 +44,9 @@ typedef enum : NSUInteger {
 
 @implementation CDVIonicKeyboard
 
+
+@synthesize disableScroll = _disableScroll;
+
 - (id)settingForKey:(NSString *)key
 {
     return [self.commandDelegate.settings objectForKey:[key lowercaseString]];
@@ -75,6 +78,7 @@ typedef enum : NSUInteger {
         NSLog(@"CDVIonicKeyboard: resize mode %d", self.keyboardResizes);
     }
     self.hideFormAccessoryBar = [settings cordovaBoolSettingForKey:@"HideKeyboardFormAccessoryBar" defaultValue:YES];
+    self.disableScroll = NO;
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
 
@@ -102,6 +106,25 @@ typedef enum : NSUInteger {
     [self _updateFrame];
 }
 
+- (BOOL)disableScroll {
+    return _disableScroll;
+}
+
+- (void)setDisableScroll:(BOOL)disableScroll {
+    if (disableScroll == _disableScroll) {
+        return;
+    }
+    if (disableScroll) {
+        self.webView.scrollView.scrollEnabled = NO;
+        self.webView.scrollView.delegate = self;
+    }
+    else {
+        self.webView.scrollView.scrollEnabled = YES;
+        self.webView.scrollView.delegate = nil;
+    }
+
+    _disableScroll = disableScroll;
+}
 
 #pragma mark Keyboard events
 
@@ -257,6 +280,16 @@ static IMP WKOriginalImp;
 
 
 #pragma mark Plugin interface
+
+- (void) disableScroll:(CDVInvokedUrlCommand*)command {
+    if (!command.arguments || ![command.arguments count]){
+      return;
+    }
+    id value = [command.arguments objectAtIndex:0];
+    if (value != [NSNull null]) {
+      self.disableScroll = [value boolValue];
+    }
+}
 
 - (void)hideFormAccessoryBar:(CDVInvokedUrlCommand *)command
 {
